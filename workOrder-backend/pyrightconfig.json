@@ -1,0 +1,18 @@
+{
+  "venvPath": ".",
+  "venv": "myenv",
+  "autoSearchPaths": false,
+  "extraPaths": [
+    "./"
+  ],
+  "executionEnvironments": [
+    {
+      "root": "./"
+    }
+  ],
+  "exclude": [
+    "**/node_modules",
+    "**/__pycache__",
+    "myenv"
+  ]
+}
