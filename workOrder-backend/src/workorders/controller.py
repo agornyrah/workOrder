@@ -3,6 +3,7 @@ from src.workorders.dtos import WorkSchema, WorkResponseSchema, StatusUpdateSche
 from sqlalchemy.orm import Session
 from src.workorders.models import WorkOrder
 from src.users.models import UserModel
+from datetime import datetime
 
 #NB: model_dump() converts a data from pydantic class to a dictionary
 
@@ -10,27 +11,31 @@ from src.users.models import UserModel
 #Logic to carry out the CREATE WORKORDER request
 def create_workOrder(workOrderItem: WorkSchema, db:Session, user: UserModel):
 
-    #First receive and validate data
-    new_workOrder = workOrderItem.model_dump()
+    # Resolve assigned user ID from full name
+    assigned_tech = db.query(UserModel).filter(UserModel.full_name == workOrderItem.assignedTo).first()
+    assigned_tech_id = assigned_tech.user_id if assigned_tech else None
 
-    #Second, add data to databse by unpacking the data and using the database model as a blueprint
+    # Generate creation date if not provided
+    created_date = workOrderItem.createdAt or datetime.now().strftime("%Y-%m-%d")
+
+    #Second, add data to databse using the database model as a blueprint
     db_new_workOrder = WorkOrder(
-            id = new_workOrder["id"],
-            title = new_workOrder["title"],
-            description = new_workOrder["description"],
-            priority = new_workOrder["priority"],
-            site = new_workOrder["site"],
-            status = new_workOrder["status"],
-            created_at = new_workOrder["created_at"],
-            due_date = new_workOrder["due_date"],
-
-            #Adding the foreign key column to specify the workOrder creator owner
-            user_id = user.user_id,
+            title = workOrderItem.title,
+            description = workOrderItem.description,
+            priority = workOrderItem.priority,
+            site = workOrderItem.site,
+            status = workOrderItem.status or "open",
+            createdAt = created_date,
+            dueDate = workOrderItem.dueDate,
+            equipment = workOrderItem.equipment,
+            assignedTo = workOrderItem.assignedTo,
+            user_id = assigned_tech_id,
             ) 
 
     #Third, add the unpacked data to the database and save changes(commit)
     db.add(db_new_workOrder)
     db.commit()
+    db.refresh(db_new_workOrder)
     
     #Improving endpoints for production:
     #This class is a performance format or practise to make the response more readable
@@ -70,8 +75,12 @@ def edit_workOrder_by_id(workOrderItem: WorkSchema, db: Session, id: int, user: 
     if db_editworkOrder_by_id is None:
         raise HTTPException(status_code=404, detail="WorkOrder ID NOT FOUND")
 
-    if db_editworkOrder_by_id.user_id != user.user_id:
+    if user.role not in ["admin", "supervisor"] and db_editworkOrder_by_id.user_id != user.user_id:
         raise HTTPException(status_code=403, detail="You are not authorized to edit this workorder")
+
+    # Resolve assigned user ID from full name
+    assigned_tech = db.query(UserModel).filter(UserModel.full_name == workOrderItem.assignedTo).first()
+    assigned_tech_id = assigned_tech.user_id if assigned_tech else None
 
     #Second, get that workorder and update it with new inputs using setattr to satisfy strict linter checks
     setattr(db_editworkOrder_by_id, "title", workOrderItem.title)
@@ -79,11 +88,14 @@ def edit_workOrder_by_id(workOrderItem: WorkSchema, db: Session, id: int, user: 
     setattr(db_editworkOrder_by_id, "priority", workOrderItem.priority)
     setattr(db_editworkOrder_by_id, "site", workOrderItem.site)
     setattr(db_editworkOrder_by_id, "status", workOrderItem.status)
-    setattr(db_editworkOrder_by_id, "created_at", workOrderItem.created_at)
-    setattr(db_editworkOrder_by_id, "due_date", workOrderItem.due_date)
+    setattr(db_editworkOrder_by_id, "dueDate", workOrderItem.dueDate)
+    setattr(db_editworkOrder_by_id, "equipment", workOrderItem.equipment)
+    setattr(db_editworkOrder_by_id, "assignedTo", workOrderItem.assignedTo)
+    setattr(db_editworkOrder_by_id, "user_id", assigned_tech_id)
     
     #Third, save changes
     db.commit()
+    db.refresh(db_editworkOrder_by_id)
 
     return db_editworkOrder_by_id
 
@@ -98,14 +110,14 @@ def delete_workOrder_by_id(id: int, db: Session, user: UserModel):
     if db_deleteworkOrder_by_id is None:
         raise HTTPException(status_code=404, detail="WorkOrder ID NOT FOUND")
 
-    if db_deleteworkOrder_by_id.user_id != user.user_id:
+    if user.role not in ["admin", "supervisor"] and db_deleteworkOrder_by_id.user_id != user.user_id:
         raise HTTPException(status_code=403, detail="You are not authorized to delete this workorder")
 
     #Second, get the workorder and apply the delete method to remove it from the database
     db.delete(db_deleteworkOrder_by_id)
     db.commit()
 
-    return {"WorkOrder removed successfully"}
+    return {"message": "WorkOrder removed successfully"}
 
 
 ###########################################################################################
