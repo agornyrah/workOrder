@@ -1,0 +1,18 @@
+{
+  "venvPath": "workOrder-backend",
+  "venv": "myenv",
+  "autoSearchPaths": false,
+  "extraPaths": [
+    "workOrder-backend"
+  ],
+  "executionEnvironments": [
+    {
+      "root": "workOrder-backend"
+    }
+  ],
+  "exclude": [
+    "**/node_modules",
+    "**/__pycache__",
+    "workOrder-backend/myenv"
+  ]
+}
