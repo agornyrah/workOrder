@@ -352,7 +352,7 @@ const completionNotes = ref('')
 
 // Initialize on mount
 onMounted(() => {
-  workOrdersStore.initWorkOrders()
+  workOrdersStore.loadWorkOrders()
 })
 
 // Get work order by ID from route

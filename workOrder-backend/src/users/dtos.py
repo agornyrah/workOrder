@@ -1,11 +1,10 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 class UserSchema(BaseModel):
-    user_id: int
-    full_name: str
+    name: str
     email: str
     role: str
-    hash_password: str
+    password: str
 
 class LoginSchema(BaseModel):
     email: str
@@ -17,6 +16,8 @@ class LoginSchema(BaseModel):
 #This class is a pperformance format or practise to make the response more readable
 #This schema shows that in the response body, the ID shouldnt show
 class UserResponseSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     user_id: int
     full_name: str
     email: str

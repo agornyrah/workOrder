@@ -126,6 +126,12 @@ export const useWorkOrdersStore = defineStore('workorders', () => {
    * Fetch all work orders from the backend.
    * Called automatically on mount and after every mutation.
    */
+  // Backward compatible alias for older views
+  // (some components call initWorkOrders())
+  async function initWorkOrders() {
+    return loadWorkOrders()
+  }
+
   async function loadWorkOrders() {
     isLoading.value = true
     error.value = null

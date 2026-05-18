@@ -21,8 +21,11 @@ def user_register(user: UserSchema, db: Session = Depends(get_db)):
 
 #Create a route to get all users
 @users_router.get("", status_code=status.HTTP_200_OK)
-def user_get_all_users(db: Session = Depends(get_db)):
+def user_get_all_users(role: str | None = None, db: Session = Depends(get_db)):
     users = controller.get_all_users(db)
+    if role:
+        role_lower = role.lower()
+        users = [user for user in users if user.role and user.role.lower() == role_lower]
     return [
         {
             "id": user.user_id,

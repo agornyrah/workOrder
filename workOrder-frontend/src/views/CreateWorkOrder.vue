@@ -139,7 +139,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useWorkOrdersStore } from '@/stores/workorders'
-import { getTechnicians } from '@/db'
+import { fetchTechnicians } from '@/api'
 
 const minDate = computed(() => {
   const tomorrow = new Date()
@@ -153,7 +153,8 @@ const workOrdersStore = useWorkOrdersStore()
 
 // Initialize on mount
 onMounted(() => {
-  workOrdersStore.initWorkOrders()
+  workOrdersStore.loadWorkOrders()
+  loadTechnicians()
 })
 
 // Form state
@@ -185,9 +186,14 @@ const technicianOptions = computed(() => {
   return technicians.value.map(t => ({ title: t.name, value: t.name }))
 })
 
-onMounted(() => {
-  technicians.value = getTechnicians()
-})
+async function loadTechnicians() {
+  try:
+    technicians.value = await fetchTechnicians()
+  } catch (err) {
+    technicians.value = []
+  }
+}
+
 
 const priorityOptions = [
   { title: 'Low', value: 'low' },
@@ -231,7 +237,6 @@ async function handleSubmit() {
       site: form.value.site,
       equipment: form.value.equipment,
       assignedTo: form.value.assignedTo,
-      assignedToId: null, // Would be set from actual user selection
       priority: form.value.priority,
       dueDate: form.value.dueDate,
       description: form.value.description,

@@ -173,7 +173,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useWorkOrdersStore } from '@/stores/workorders'
-import { getTechnicians } from '@/db'
+import { fetchTechnicians } from '@/api'
 
 const minDate = computed(() => {
   const tomorrow = new Date()
@@ -194,8 +194,9 @@ const workOrder = computed(() => {
 
 // Initialize on mount
 onMounted(() => {
-  workOrdersStore.initWorkOrders()
-  
+  workOrdersStore.loadWorkOrders()
+  loadTechnicians()
+
   // Populate form with existing data
   if (workOrder.value) {
     form.value = {
@@ -208,7 +209,7 @@ onMounted(() => {
       description: workOrder.value.description || '',
     }
   }
-  technicians.value = getTechnicians()
+  await loadTechnicians()
 })
 
 // Form state
@@ -240,6 +241,15 @@ const technicians = ref([])
 const technicianOptions = computed(() => {
   return [...technicians.value.map(t => ({ title: t.name, value: t.name })), { title: 'Unassigned', value: 'Unassigned' }]
 })
+
+async function loadTechnicians() {
+  try:
+    technicians.value = await fetchTechnicians()
+  } catch (err) {
+    technicians.value = []
+  }
+}
+
 
 const priorityOptions = [
   { title: 'Low', value: 'low' },
