@@ -1,0 +1,47 @@
+from fastapi import Request, HTTPException, status, Depends
+from sqlalchemy.orm import Session
+from src.utils.settings import settings
+from src.users.models import UserModel
+import jwt
+from jwt.exceptions import InvalidTokenError
+from datetime import datetime
+from src.utils.db import get_db
+
+
+#Creating protected routes by making this fuction a dependent function
+def is_authenticated(request:Request, db: Session = Depends(get_db)): 
+
+    #USE TRY and CATCH or EXCEPT to implement this ogic especially when the token is invalid or expired
+    try:
+        #Get the token that was generated once the user logged in and extract or 
+        #find the value of the authorization key in the headers object
+        token = request.headers.get("authorization")
+
+        if not token:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token NOT FOUND.")
+        
+        #NB normally, generated tokens have the prefix "jwt" prepended to it 7
+        #so this step actually removes that and helps us validate the token alone
+        token = token.split(" ")[-1]
+
+        #Decode the token and verify it with the params that were used to create it
+        data = jwt.decode(token, settings.SECRET_KEY, settings.ALGORITHM)
+
+        #Get the user_id and the expiry time from the decoded token
+        token_user_id = data.get("user_id")
+        exp_time = data.get("exp")
+
+        #Compare expiry time to a current time
+        current_time = datetime.now().timestamp()
+        if current_time > exp_time:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired.")
+        
+        #Check if the user_id matches the one in the database
+        user = db.query(UserModel).filter(UserModel.user_id == token_user_id).first()
+        if not user:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid User ID.")
+        
+        return user
+    
+    except InvalidTokenError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="You are UNAUTHORIZED")
