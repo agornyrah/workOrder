@@ -10,10 +10,18 @@ class ActivityLog(Base):
     workOrderTitle = Column(String)
     performedBy = Column(String)
     note = Column(String)
+    timestamp = Column(String)
 
 
 class UserActivityRead(Base):
     __tablename__ = "user_activity_read"
+
+    user_id = Column(Integer, primary_key=True, index=True)
+    log_id = Column(Integer, primary_key=True, index=True)
+
+
+class UserActivityHidden(Base):
+    __tablename__ = "user_activity_hidden"
 
     user_id = Column(Integer, primary_key=True, index=True)
     log_id = Column(Integer, primary_key=True, index=True)

@@ -14,8 +14,8 @@ activityLog_router = APIRouter(prefix="/activity-log")
 
 #Create a route to create an activity log entry
 @activityLog_router.post("",response_model=ActivityResponseSchema, status_code=status.HTTP_201_CREATED)
-def create_activity(activity: ActivitySchema, db: Session = Depends(get_db)):
-    return controller.create_activity(activity, db)
+def create_activity(activity: ActivitySchema, db: Session = Depends(get_db), user: UserModel = Depends(is_authenticated)):
+    return controller.create_activity(activity, db, user)
 
 
 ###########################################################################################
@@ -53,10 +53,15 @@ def fetch_activity_by_id(id: int, db: Session = Depends(get_db)):
 
 #Create a route to delete an activity log
 @activityLog_router.delete("/{id}",response_model=None, status_code=status.HTTP_204_NO_CONTENT)
-def delete_activity_by_id(id: int, db: Session = Depends(get_db)):
-    return controller.delete_activity_by_id(id, db)
+def delete_activity_by_id(id: int, db: Session = Depends(get_db), user: UserModel = Depends(is_authenticated)):
+    return controller.delete_activity_by_id(id, db, user)
 
 ###########################################################################################
 
+#Create a route to clear all activity logs
+@activityLog_router.delete("", status_code=status.HTTP_200_OK)
+def delete_all_activities(db: Session = Depends(get_db), user: UserModel = Depends(is_authenticated)):
+    return controller.delete_all_activities(db, user)
 
+###########################################################################################
 

@@ -239,7 +239,6 @@ function formatTimeAgo(iso) {
               variant="text"
               v-bind="props"
               class="me-1 d-none d-md-flex"
-              @click="logStore.markAllRead()"
             >
               <v-badge
                 :content="logStore.unreadCount"

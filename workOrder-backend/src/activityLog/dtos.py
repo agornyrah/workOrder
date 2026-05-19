@@ -1,12 +1,11 @@
 from pydantic import BaseModel
 
 class ActivitySchema(BaseModel):
-    log_id: int
     action: str
     workOrderId: int
     workOrderTitle: str
-    performedBy: str
-    note: str
+    performedBy: str | None = ""
+    note: str | None = ""
 
 
 #Improving endpoints for production:
@@ -14,9 +13,11 @@ class ActivitySchema(BaseModel):
 #This schema shows that in the response body, the ID shouldnt show
 class ActivityResponseSchema(BaseModel):
     log_id: int
+    id: int
     action: str
     workOrderId: int
     workOrderTitle: str
     performedBy: str
     note: str
+    timestamp: str
     read: bool = False

@@ -247,6 +247,15 @@ export async function markActivityRead(id) {
   return response.data
 }
 
+/**
+ * DELETE /activity-log
+ * @returns {object} confirmation
+ */
+export async function clearActivityLog() {
+  const response = await api.delete('/activity-log')
+  return response.data
+}
+
 // ══════════════════════════════════════════════
 //  DEFAULT EXPORT  (for convenience)
 // ══════════════════════════════════════════════

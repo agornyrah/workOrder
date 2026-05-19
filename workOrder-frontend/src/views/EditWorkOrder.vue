@@ -193,9 +193,9 @@ const workOrder = computed(() => {
 })
 
 // Initialize on mount
-onMounted(() => {
-  workOrdersStore.loadWorkOrders()
-  loadTechnicians()
+onMounted(async () => {
+  await workOrdersStore.loadWorkOrders()
+  await loadTechnicians()
 
   // Populate form with existing data
   if (workOrder.value) {
@@ -209,7 +209,6 @@ onMounted(() => {
       description: workOrder.value.description || '',
     }
   }
-  await loadTechnicians()
 })
 
 // Form state
@@ -243,7 +242,7 @@ const technicianOptions = computed(() => {
 })
 
 async function loadTechnicians() {
-  try:
+  try {
     technicians.value = await fetchTechnicians()
   } catch (err) {
     technicians.value = []
@@ -290,7 +289,7 @@ async function handleSubmit() {
   successMessage.value = ''
 
   try {
-    workOrdersStore.updateWorkOrder(workOrderId.value, {
+    await workOrdersStore.updateWorkOrder(workOrderId.value, {
       title: form.value.title,
       site: form.value.site,
       equipment: form.value.equipment,
@@ -298,6 +297,8 @@ async function handleSubmit() {
       priority: form.value.priority,
       dueDate: form.value.dueDate,
       description: form.value.description,
+      status: workOrder.value.status,
+      createdAt: workOrder.value.createdAt
     })
 
     successMessage.value = 'Work order updated successfully!'

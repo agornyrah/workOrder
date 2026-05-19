@@ -8,7 +8,7 @@
             <v-icon color="#064229" size="50" class="mb-2">
               mdi-facebook-workplace
             </v-icon>
-            <h1 class="font-weight-bold mt-n2" style="color: #064229;">WorkOrder</h1>
+            <h1 class="font-weight-bold mt-n2 mb-n8" style="color: #064229;">WorkOrder</h1>
           </div>
 
           <!-- Header -->

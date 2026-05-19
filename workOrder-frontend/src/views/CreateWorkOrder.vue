@@ -187,7 +187,7 @@ const technicianOptions = computed(() => {
 })
 
 async function loadTechnicians() {
-  try:
+  try {
     technicians.value = await fetchTechnicians()
   } catch (err) {
     technicians.value = []

@@ -233,7 +233,7 @@
           <v-card-text class="pa-4">
             <div class="mb-3">
               <div class="text-caption text-grey-darken-1">Created by</div>
-              <div class="text-body-2">{{ workOrder.createdBy }}</div>
+              <div class="text-body-2">{{ workOrder.createdBy || 'Unknown' }}</div>
             </div>
             <div class="mb-3">
               <div class="text-caption text-grey-darken-1">Created on</div>

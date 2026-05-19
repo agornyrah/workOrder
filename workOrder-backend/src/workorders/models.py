@@ -14,6 +14,8 @@ class WorkOrder(Base):
     dueDate = Column(String)
     equipment = Column(String)
     assignedTo = Column(String)
+    createdBy = Column(String)
+    createdById = Column(Integer, ForeignKey("user_table.user_id", ondelete="SET NULL"))
 
     #This is where you initialize linkage between some users and the work orders assigned to them specifically
     user_id = Column(Integer, ForeignKey("user_table.user_id", ondelete="CASCADE"))
