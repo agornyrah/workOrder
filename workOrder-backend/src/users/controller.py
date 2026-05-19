@@ -29,7 +29,7 @@ def verify_password(plain_password, hashed_password):
 def register(user: UserSchema, db: Session):
 
     #First, Check if the full_name already exists
-    db_full_name_and_email = db.query(UserModel).filter(UserModel.full_name == user.full_name).first()
+    db_full_name_and_email = db.query(UserModel).filter(UserModel.full_name == user.name).first()
     if db_full_name_and_email:
         raise HTTPException(status_code=400, detail="Full name already exists")
 
@@ -39,11 +39,11 @@ def register(user: UserSchema, db: Session):
         raise HTTPException(status_code=400, detail="Email already exists")
     
     #Third, Hash password
-    db_hashed_password = get_password_hash(user.hash_password)
+    db_hashed_password = get_password_hash(user.password)
 
     #Fourth, Create a new user to be added to the database
     db_user = UserModel(
-        full_name = user.full_name,
+        full_name = user.name,
         email = user.email,
         role = user.role,
         hash_password = db_hashed_password,
@@ -58,10 +58,14 @@ def register(user: UserSchema, db: Session):
 
 #########################################################################################################################
 
-def get_all_users(db: Session):
-    #Get all users from the database
+def get_all_users(db: Session, role: str | None = None):
+    #Get all users from the database; optionally filter by role
+    if role:
+        role_lower = role.lower()
+        # Use case-insensitive filter at DB level
+        return db.query(UserModel).filter(UserModel.role.ilike(role_lower)).all()
+
     db_users = db.query(UserModel).all()
-    
     return db_users
 
 #########################################################################################################################

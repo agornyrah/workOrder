@@ -60,23 +60,23 @@ export const useWorkOrdersStore = defineStore('workorders', () => {
 
   // ── Getters ───────────────────────────────────
 
-  /** Returns every work order without any filtering */
+  /* Returns every work order without any filtering */
   const allWorkOrders = computed(() => workOrders.value)
 
-  /**
-   * Returns work orders that match the current filter criteria.
-   * Filtering is done client-side for instant responsiveness.
-   */
+  /*
+    Returns work orders that match the current filter criteria.
+    Filtering is done client-side for instant responsiveness.
+  */
   const filteredWorkOrders = computed(() => {
     let result = workOrders.value
 
-    // Free-text search: match against title, id, or site
+    /* Free-text search: match against title, id, or site */
     if (filters.value.search) {
       const search = filters.value.search.toLowerCase()
       result = result.filter(wo =>
-        wo.title.toLowerCase().includes(search) ||
-        wo.id.toLowerCase().includes(search) ||
-        wo.site.toLowerCase().includes(search)
+        (wo.title && String(wo.title).toLowerCase().includes(search)) ||
+        (wo.id && String(wo.id).toLowerCase().includes(search)) ||
+        (wo.site && String(wo.site).toLowerCase().includes(search))
       )
     }
 
@@ -122,10 +122,16 @@ export const useWorkOrdersStore = defineStore('workorders', () => {
 
   // ── Actions ───────────────────────────────────
 
-  /**
-   * Fetch all work orders from the backend.
-   * Called automatically on mount and after every mutation.
-   */
+  /*
+    Fetch all work orders from the backend.
+    Called automatically on mount and after every mutation.
+  */
+  // Backward compatible alias for older views
+  // (some components call initWorkOrders())
+  async function initWorkOrders() {
+    return loadWorkOrders()
+  }
+
   async function loadWorkOrders() {
     isLoading.value = true
     error.value = null
@@ -145,21 +151,21 @@ export const useWorkOrdersStore = defineStore('workorders', () => {
     loadWorkOrders()
   })
 
-  /**
-   * Find a single work order by ID from the local cache.
-   * @param {string} id - The work order ID (e.g. "WO-1045")
-   * @returns {Object|undefined}
-   */
+  /*
+    Find a single work order by ID from the local cache.
+    @param {string} id - The work order ID (e.g. "WO-1045")
+    @returns {Object|undefined}
+  */
   function getWorkOrderById(id) {
-    return workOrders.value.find(wo => wo.id === id)
+    return workOrders.value.find(wo => String(wo.id) === String(id))
   }
 
-  /**
-   * Create a new work order via POST /workorders.
-   * Automatically refreshes the list, logs the action, and shows a snackbar.
-   * @param {Object} workOrderData - All fields for the new work order
-   * @returns {Object} The newly created work order from the server
-   */
+  /*
+    Create a new work order via POST /workorders.
+    Automatically refreshes the list, logs the action, and shows a snackbar.
+    @param {Object} workOrderData - All fields for the new work order
+    @returns {Object} The newly created work order from the server
+  */
   async function createWorkOrder(workOrderData) {
     const authStore = useAuthStore()
     const logStore = useActivityLogStore()
@@ -223,15 +229,15 @@ export const useWorkOrdersStore = defineStore('workorders', () => {
     }
   }
 
-  /**
-   * Change a work order's status via PATCH /workorders/{id}/status.
-   * This is a dedicated endpoint because status changes may trigger
-   * additional server-side logic (e.g. setting completedAt).
-   * @param {string} id - The work order ID
-   * @param {string} newStatus - The target status (open, in_progress, closed, cancelled)
-   * @param {string} [notes] - Optional completion notes
-   * @returns {Object} The updated work order from the server
-   */
+  /*
+    Change a work order's status via PATCH /workorders/{id}/status.
+    This is a dedicated endpoint because status changes may trigger
+    additional server-side logic (e.g. setting completedAt).
+    @param {string} id - The work order ID
+    @param {string} newStatus - The target status (open, in_progress, closed, cancelled)
+    @param {string} [notes] - Optional completion notes
+    @returns {Object} The updated work order from the server
+  */
   async function updateStatus(id, newStatus, notes = '') {
     const authStore = useAuthStore()
     const logStore = useActivityLogStore()
@@ -264,12 +270,12 @@ export const useWorkOrdersStore = defineStore('workorders', () => {
     }
   }
 
-  /**
-   * Delete a work order via DELETE /workorders/{id}.
-   * Captures the work order title before deletion for the log.
-   * @param {string} id - The work order ID
-   * @returns {boolean} True if deleted, false if an error occurred
-   */
+  /*
+    Delete a work order via DELETE /workorders/{id}.
+    Captures the work order title before deletion for the log.
+    @param {string} id - The work order ID
+    @returns {boolean} True if deleted, false if an error occurred
+  */
   async function deleteWorkOrder(id) {
     const authStore = useAuthStore()
     const logStore = useActivityLogStore()
@@ -277,7 +283,7 @@ export const useWorkOrdersStore = defineStore('workorders', () => {
 
     try {
       // Capture the title before the server removes it
-      const wo = workOrders.value.find(w => w.id === id)
+      const wo = workOrders.value.find(w => String(w.id) === String(id))
 
       await apiDeleteWorkOrder(id)
       await loadWorkOrders()

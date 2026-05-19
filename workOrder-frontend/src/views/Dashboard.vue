@@ -6,7 +6,7 @@ import { useWorkOrdersStore } from '@/stores/workorders'
 const authStore = useAuthStore()
 const workOrdersStore = useWorkOrdersStore()
 
-onMounted(() => { workOrdersStore.initWorkOrders() })
+onMounted(async () => { if (authStore.isAuthenticated) await workOrdersStore.loadWorkOrders() })
 
 const statusConfig = {
   open:        { color: 'blue-darken-1' },

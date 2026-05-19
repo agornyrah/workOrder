@@ -13,13 +13,14 @@
  */
 
 import { defineStore } from 'pinia'
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useAuthStore } from './auth'
 import {
   fetchActivityLog,
   createActivityLogEntry,
   markAllActivityRead,
-  markActivityRead
+  markActivityRead,
+  clearActivityLog
 } from '@/api'
 
 // ── Action Metadata ─────────────────────────────
@@ -52,6 +53,11 @@ export const useActivityLogStore = defineStore('activityLog', () => {
    * Called on mount and after every mutation (new log, mark read, etc.).
    */
   async function loadLogs() {
+    if (!authStore.isAuthenticated) {
+      entries.value = []
+      return
+    }
+
     isLoading.value = true
     try {
       const data = await fetchActivityLog()   // GET /activity-log
@@ -67,6 +73,17 @@ export const useActivityLogStore = defineStore('activityLog', () => {
   onMounted(() => {
     loadLogs()
   })
+
+  watch(
+    () => authStore.isAuthenticated,
+    (isAuthenticated) => {
+      if (isAuthenticated) {
+        loadLogs()
+      } else {
+        entries.value = []
+      }
+    }
+  )
 
   // ── Getters ───────────────────────────────────
 
@@ -142,12 +159,19 @@ export const useActivityLogStore = defineStore('activityLog', () => {
   }
 
   /**
-   * Clear the local entries array.
-   * Note: This only clears the client-side state, not the server.
-   * Add a DELETE endpoint on FastAPI if you need server-side clearing.
+   * Clear activity log entries on the server and reset local state.
    */
   function clearAll() {
-    entries.value = []
+    return clearLogs()
+  }
+
+  async function clearLogs() {
+    try {
+      await clearActivityLog()
+      entries.value = []
+    } catch (err) {
+      console.error('Failed to clear activity logs', err)
+    }
   }
 
   // ── Expose ────────────────────────────────────
@@ -165,5 +189,6 @@ export const useActivityLogStore = defineStore('activityLog', () => {
     markAllRead,
     markRead,
     clearAll,
+    clearLogs,
   }
 })

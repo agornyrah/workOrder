@@ -244,7 +244,7 @@ const workOrdersStore = useWorkOrdersStore()
 
 // Initialize on mount
 onMounted(() => {
-  workOrdersStore.initWorkOrders()
+  workOrdersStore.loadWorkOrders()
 })
 
 // Dynamic page title/subtitle based on role

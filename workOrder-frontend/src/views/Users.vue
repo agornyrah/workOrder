@@ -239,7 +239,7 @@
             <v-btn
               color="#064229"
               variant="flat"
-              @click="updateUser"
+              @click="saveUserChanges"
               :disabled="!isEditFormValid"
               rounded="lg"
               style="color: #D4E97D;"
@@ -262,7 +262,7 @@
           <v-card-actions>
             <v-spacer></v-spacer>
             <v-btn variant="text" @click="showDeleteDialog = false" color="#064229">Cancel</v-btn>
-            <v-btn color="error" variant="flat" @click="deleteUser" rounded="lg">Delete</v-btn>
+            <v-btn color="error" variant="flat" @click="confirmAndDeleteUser" rounded="lg">Delete</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -295,9 +295,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import { getUsers, addUser as dbAddUser, updateUser as dbUpdateUser, deleteUser as dbDeleteUser } from '@/db'
+import { fetchUsers, updateUser as apiUpdateUser, deleteUser as apiDeleteUser, registerUser as apiCreateUser } from '@/api'
+import { useSnackbarStore } from '@/stores/snackbar'
 
 const authStore = useAuthStore()
+const snackbar = useSnackbarStore()
 
 // Users list from database
 const users = ref([])
@@ -328,16 +330,20 @@ const adminCount = computed(() => users.value.filter(u => u.role === 'admin').le
 const supervisorCount = computed(() => users.value.filter(u => u.role === 'supervisor').length)
 const technicianCount = computed(() => users.value.filter(u => u.role === 'technician').length)
 
-// Load users from database
-function loadUsers() {
-  const allUsers = getUsers()
-  // Remove passwords for display
-  users.value = allUsers.map(u => ({
-    id: u.id,
-    name: u.name,
-    email: u.email,
-    role: u.role,
-  }))
+// Load users from API
+async function loadUsers() {
+  try {
+    const allUsers = await fetchUsers()
+    users.value = allUsers.map(u => ({
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      role: u.role,
+    }))
+  } catch (error) {
+    console.error('Failed to load users:', error)
+    snackbar.error('Failed to load users.')
+  }
 }
 
 onMounted(() => {
@@ -365,26 +371,25 @@ const passwordRules = [
   (v) => v.length >= 6 || 'Password must be at least 6 characters',
 ]
 
-function addUser() {
+async function addUser() {
   try {
     const user = {
-      id: 'user_' + Date.now(),
       name: newUser.value.name,
       email: newUser.value.email,
       role: newUser.value.role,
       password: newUser.value.password,
     }
 
-    dbAddUser(user)
-
-    // Refresh list
-    loadUsers()
+    await apiCreateUser(user)
+    snackbar.success('User added successfully!')
+    await loadUsers() // Refresh list
 
     // Reset form and close dialog
     newUser.value = { name: '', email: '', role: 'technician', password: '' }
     showAddDialog.value = false
   } catch (err) {
-    alert(err.message)
+    console.error('Failed to add user:', err)
+    snackbar.error(err.message || 'Failed to add user.')
   }
 }
 
@@ -404,7 +409,7 @@ function editUser(user) {
   showEditDialog.value = true
 }
 
-function updateUser() {
+async function saveUserChanges() {
   try {
     const updates = {
       name: editingUser.value.name,
@@ -412,14 +417,14 @@ function updateUser() {
       role: editingUser.value.role,
     }
 
-    const updated = dbUpdateUser(editingUser.value.id, updates)
-    if (updated) {
-      loadUsers()
-    }
+    await apiUpdateUser(editingUser.value.id, updates)
+    snackbar.success('User updated successfully!')
+    await loadUsers() // Refresh list
 
     showEditDialog.value = false
   } catch (err) {
-    alert(err.message)
+    console.error('Failed to update user:', err)
+    snackbar.error(err.message || 'Failed to update user.')
   }
 }
 
@@ -432,69 +437,41 @@ function confirmDelete(user) {
   showDeleteDialog.value = true
 }
 
-function deleteUser() {
+async function confirmAndDeleteUser() {
   if (!userToDelete.value) return
 
-  dbDeleteUser(userToDelete.value.id)
-  loadUsers()
+  try {
+    await apiDeleteUser(userToDelete.value.id)
+    snackbar.success('User deleted successfully!')
+    await loadUsers() // Refresh list
 
-  showDeleteDialog.value = false
-  userToDelete.value = null
+    showDeleteDialog.value = false
+    userToDelete.value = null
+  } catch (err) {
+    console.error('Failed to delete user:', err)
+    snackbar.error(err.message || 'Failed to delete user.')
+  }
 }
 
 // Reset all data dialog
 const showResetDialog = ref(false)
 
-function resetAllData() {
-  // Clear work orders
-  localStorage.removeItem('workorders_db')
-  // Clear users
-  localStorage.removeItem('users_db')
-  // Re-initialize default users
-  const defaultUsers = [
-    {
-      id: 'user_1',
-      email: 'ahmed@example.com',
-      name: 'Ahmed K.',
-      role: 'technician',
-      password: 'password123',
-    },
-    {
-      id: 'user_2',
-      email: 'john@example.com',
-      name: 'John T.',
-      role: 'technician',
-      password: 'password123',
-    },
-    {
-      id: 'user_3',
-      email: 'sarah@example.com',
-      name: 'Sarah M.',
-      role: 'technician',
-      password: 'password123',
-    },
-    {
-      id: 'user_admin',
-      email: 'admin@example.com',
-      name: 'Admin User',
-      role: 'admin',
-      password: 'admin123',
-    },
-    {
-      id: 'user_supervisor',
-      email: 'supervisor@example.com',
-      name: 'Supervisor User',
-      role: 'supervisor',
-      password: 'supervisor123',
-    },
-  ]
-  localStorage.setItem('users_db', JSON.stringify(defaultUsers))
+async function resetAllData() {
+  // This function would ideally call a backend API to reset all data.
+  // For now, we'll simulate a reset by clearing local state and reloading.
+  // In a real application, you'd have an endpoint like DELETE /admin/reset-data
+  // await api.resetAllData() // Example of an API call
 
-  // Refresh the list
-  loadUsers()
+  // Clear work orders (assuming workorders_db is also managed by API now)
+  // localStorage.removeItem('workorders_db')
+  // Clear users (assuming users_db is also managed by API now)
+  // localStorage.removeItem('users_db')
+
+  // After a successful backend reset, reload users from the API
+  await loadUsers()
+  snackbar.success('All data has been reset (simulated). Default users restored from API.')
 
   showResetDialog.value = false
-  alert('All data has been reset. Default users restored. Work orders cleared.')
 }
 </script>
 

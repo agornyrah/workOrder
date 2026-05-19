@@ -11,6 +11,8 @@ class WorkSchema(BaseModel):
     dueDate: str
     equipment: str | None = ""
     assignedTo: str | None = "Unassigned"
+    createdBy: str | None = ""
+    createdById: int | None = None
 
 #Improving endpoints for production:
 #This class is a performance format or practise to make the response more readable
@@ -26,6 +28,8 @@ class WorkResponseSchema(BaseModel):
     dueDate: str
     equipment: str | None = ""
     assignedTo: str | None = "Unassigned"
+    createdBy: str | None = ""
+    createdById: int | None = None
 
     #Display or show the id value of the user each workorder is assigned
     user_id: int | None = 0
